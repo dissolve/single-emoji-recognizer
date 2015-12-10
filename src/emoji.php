@@ -3,7 +3,7 @@
 class EmojiRecognizer
 {
 
-    private static function is_emoji_char($intvalue)
+    private static function isEmojiChar($intvalue)
     {
         return (
            ($intvalue >= 0x1F300 && $intvalue <= 0x1F5FF ) //supplemental symbols and pictographs
@@ -15,7 +15,7 @@ class EmojiRecognizer
         );
     }
 
-    private static function is_non_spacing_mark($intvalue)
+    private static function isNonSpacingMark($intvalue)
     {
          return (
            ($intvalue >= 0x0300 && $intvalue <= 0x036F )
@@ -31,7 +31,7 @@ class EmojiRecognizer
          );
     }
 
-    private static function is_modifier($intvalue)
+    private static function isModifier($intvalue)
     {
         return (
            ($intvalue == 0x005E)
@@ -58,7 +58,7 @@ class EmojiRecognizer
         );
     }
 
-    private static function is_variation_selector($intvalue)
+    private static function isVariationSelector($intvalue)
     {
         return (
            ($intvalue >= 0xFE00  && $intvalue <= 0xFE0F  ) // variation selectors 1-16
@@ -66,12 +66,12 @@ class EmojiRecognizer
         );
     }
 
-    private static function is_flag_char($intvalue)
+    private static function isFlagChar($intvalue)
     {
          return ($intvalue >= 0x1F1E6  && $intvalue <= 0x1F1FF);
     }
 
-    private static function is_zwj($intvalue)
+    private static function isZWJ($intvalue)
     {
         return ($intvalue == 0x200D);
     }
@@ -79,22 +79,34 @@ class EmojiRecognizer
 // much of this is based on what i could understand from
 // http://www.unicode.org/reports/tr51/index.html#def_emoji_modifier_base
 
-    private static function parse_emoji_core_sequence($input, $position)
+    private static function parseEmojiCoreSequence($input, $position)
     {
         //remove leading char
-        if (self::is_emoji_char($input[$position]) ) {
+        if (self::isEmojiChar($input[$position]) ) {
             $position++;
+            if (count($input) == $position) {
+                return true;
+            }
             //modifiers and variation selectors come after characters
-            if (self::is_variation_selector($input[$position])) {
+            if (self::isVariationSelector($input[$position])) {
                 $position++;
+                if (count($input) == $position) {
+                    return true;
+                }
             }
-            while (self::is_non_spacing_mark($input[$position])) {
+            while (self::isNonSpacingMark($input[$position])) {
                 $position++;
+                if (count($input) == $position) {
+                    return true;
+                }
             }
-            if (self::is_modifier($input[$position])) {
+            if (self::isModifier($input[$position])) {
                 $position++;
+                if (count($input) == $position) {
+                    return true;
+                }
             }
-        } elseif ( self::is_flag_char($input[$position]) && self::is_flag_char($input[$position + 1])) {
+        } elseif ( self::isFlagChar($input[$position]) && self::isFlagChar($input[$position + 1])) {
             $position = $position + 2;
         }
 
@@ -102,66 +114,62 @@ class EmojiRecognizer
             return true;
         }
 
-        if ( self::is_zwj($input[$position])) {
+        if ( self::isZWJ($input[$position])) {
             $position++;
-            return self::parse_emoji_core_sequence($input, $position);
+            return self::parseEmojiCoreSequence($input, $position);
         }
 
         return false;
 
     }
 
-    private static function parse_emoji_sequence($input)
+    private static function parseEmojiSequence($input)
     {
         if (!is_array($input)) {
-            return self::is_emoji_char($input);
+            return self::isEmojiChar($input);
         }
         $position = 0;
 
         //allowed to start with one of these types of characters i think
         //if so, we skip it
-        if (self::is_modifier($input[$position]) || self::is_variation_selector($input[$position]) || self::is_zwj($input[$position]) ) {
+        if (self::isModifier($input[$position]) || self::isVariationSelector($input[$position]) || self::isZWJ($input[$position]) ) {
             $position++;
         }
 
-        if (self::is_emoji_char($input[$position])  || self::is_flag_char($input[$position])) {
-            return self::parse_emoji_core_sequence($input, $position);
+        if (self::isEmojiChar($input[$position])  || self::isFlagChar($input[$position])) {
+            return self::parseEmojiCoreSequence($input, $position);
         }
         return false;
     }
 
 
-    public static function is_single_emoji($text)
+    public static function isSingleEmoji($text)
     {
         $text = trim($text);
         $text = htmlentities($text);
 
-        $a = preg_match_all('/^(\&amp;\#\d+;)+$/', $text, $matches);
-
-        if(empty($matches) || !isset($matches[0]) || !isset($matches[0][0])){
-            //$a = preg_match_all('/^(\&(amp;)?x[\da-fA-F]+;)+$/', $text, $matches);
-            //if(empty($matches) || !isset($matches[0]) || !isset($matches[0][0])){
-                //var_dump($matches);
-                //var_dump($text);
-                return false;
-            }
-        }
-        
-        $matched =($matches[0][0]);
-        $a = preg_match_all('/\&amp;\#(\d+);/', $matched, $matches);
-        $int_vals = array();
-        foreach ($matches[1] as $str) {
-            $int_vals[] = intval($str);
-        }
-
-        return self::parse_emoji_sequence($int_vals);
+        return self::isSingleEmojiHTML($text);
 
     }
 
-    public static function is_single_emoji_html($text)
+    public static function isSingleEmojiHTML($text)
     {
-        $text = html_entity_decode($text);
-        return self::is_single_emoji($text);
+        preg_match_all('/^(\&(amp;)?\#\d+;)+$/', $text, $matches);
+
+        if (empty($matches) || !isset($matches[0]) || !isset($matches[0][0])) {
+        //preg_match_all('/^(\&(amp;)?x[\da-fA-F]+;)+$/', $text, $matches);
+            return false;
+        }
+
+        $matched = ($matches[0][0]);
+        $a = preg_match_all('/\&(amp;)?\#(\d+);/', $matched, $matches);
+
+        $integer_equivs = array();
+        foreach ($matches[2] as $str) {
+            $integer_equivs[] = intval($str);
+        }
+
+        return self::parseEmojiSequence($integer_equivs);
     }
 
 
