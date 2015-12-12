@@ -154,6 +154,7 @@ class EmojiRecognizer
 
     public static function isSingleEmojiHTML($text)
     {
+        $text = trim($text);
         preg_match_all('/^(\&(amp;)?\#\d+;)+$/', $text, $matches);
 
         if (empty($matches) || !isset($matches[0]) || !isset($matches[0][0])) {
