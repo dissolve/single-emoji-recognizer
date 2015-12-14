@@ -32,6 +32,9 @@ class basicTest extends PHPUnit_Framework_TestCase
     public function testHTMLSpecialCharacters()
     {
         $this->assertTrue(EmojiRecognizer::isSingleEmoji('&spades;'));
+        $this->assertTrue(EmojiRecognizer::isSingleEmoji('&hearts;'));
+        $this->assertTrue(EmojiRecognizer::isSingleEmoji('&clubs;'));
+        $this->assertTrue(EmojiRecognizer::isSingleEmoji('&diams;'));
     }
 
     public function testStandardLettersAreNot()
@@ -45,11 +48,5 @@ class basicTest extends PHPUnit_Framework_TestCase
         $this->assertFalse(EmojiRecognizer::isSingleEmoji('#00'));
     }
 
-    /*  this is not yet supported... PR?
-    public function testAlternatHtml()
-    {
-        $this->assertTrue(EmojiRecognizer::isSingleEmojiHTML('&heart;'));
-    }
-     */
 }
 
