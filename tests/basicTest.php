@@ -3,15 +3,17 @@ class basicTest extends PHPUnit_Framework_TestCase
 {
     public function testSingleChars()
     {
-        $this->assertTrue(EmojiRecognizer::isSingleEmojiHTML('&#128513;'));
-        $this->assertTrue(EmojiRecognizer::isSingleEmojiHTML('&#128169;'));
-        $this->assertTrue(EmojiRecognizer::isSingleEmoji(urlencode('😯')));
+        $this->assertTrue(EmojiRecognizer::isSingleEmoji('😯'));
     }
-    public function testSingleCharsWithSpaces()
+    public function testSingleCharsOfHTML()
     {
-        $this->assertTrue(EmojiRecognizer::isSingleEmojiHTML('&#128513; '));
-        $this->assertTrue(EmojiRecognizer::isSingleEmojiHTML('  &#128169;'));
-        $this->assertTrue(EmojiRecognizer::isSingleEmojiHTML('  &#128169;'));
+        $this->assertTrue(EmojiRecognizer::isSingleEmoji('&#128513;'));
+        $this->assertTrue(EmojiRecognizer::isSingleEmoji('&#128169;'));
+
+        // add spaces
+        $this->assertTrue(EmojiRecognizer::isSingleEmoji('&#128513; '));
+        $this->assertTrue(EmojiRecognizer::isSingleEmoji('  &#128169;'));
+        $this->assertTrue(EmojiRecognizer::isSingleEmoji('  &#128169;'));
     }
 
     /*  this is not yet supported... PR?

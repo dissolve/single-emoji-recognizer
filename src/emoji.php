@@ -125,6 +125,9 @@ class EmojiRecognizer
 
     private static function parseEmojiSequence($input)
     {
+        if (empty($input)) {
+            return false;
+        }
         if (!is_array($input)) {
             return self::isEmojiChar($input);
         }
@@ -179,7 +182,7 @@ class EmojiRecognizer
 
     public static function isSingleEmojiByUrlEncode($text)
     {
-        urlencode($text);
+        $text = urlencode($text);
         $integer_equivs = self::urlEncToIntArray($text);
 
         return self::parseEmojiSequence($integer_equivs);
