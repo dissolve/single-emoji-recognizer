@@ -146,8 +146,11 @@ class EmojiRecognizer
     public static function isSingleEmoji($text)
     {
         $text = trim($text);
-        $text = htmlentities($text);
 
+        if(self::isSingleEmojiByURLEncode($text)) {
+            return true;
+        }
+        $text = htmlentities($text);
         return self::isSingleEmojiHTML($text);
 
     }
@@ -155,7 +158,8 @@ class EmojiRecognizer
     public static function isSingleEmojiHTML($text)
     {
         $text = trim($text);
-        preg_match_all('/^(\&(amp;)?\#\d+;)+$/', $text, $matches);
+        //includes amp; un case of double encoding... why not
+        preg_match_all('/^(\&(amp;)*\#\d+;)+$/', $text, $matches);
 
         if (empty($matches) || !isset($matches[0]) || !isset($matches[0][0])) {
         //preg_match_all('/^(\&(amp;)?x[\da-fA-F]+;)+$/', $text, $matches);
@@ -163,7 +167,7 @@ class EmojiRecognizer
         }
 
         $matched = ($matches[0][0]);
-        $a = preg_match_all('/\&(amp;)?\#(\d+);/', $matched, $matches);
+        $a = preg_match_all('/\&(amp;)*\#(\d+);/', $matched, $matches);
 
         $integer_equivs = array();
         foreach ($matches[2] as $str) {
@@ -171,6 +175,67 @@ class EmojiRecognizer
         }
 
         return self::parseEmojiSequence($integer_equivs);
+    }
+
+    public static function isSingleEmojiByUrlEncode($text)
+    {
+        urlencode($text);
+        $integer_equivs = self::urlEncToIntArray($text);
+
+        return self::parseEmojiSequence($integer_equivs);
+    }
+
+    public static function urlEncToIntArray($urlencodedString)
+    {
+        $urlencstr = trim($urlencodedString);
+        //make sure our string is only utf8 encoded data otherwise we are done
+        if(! preg_match('/^(%[0-9A-F][0-9A-F])+$/i', $urlencstr)){
+            return array();
+        }
+
+        $result = array();
+
+        preg_match_all('/%([0-9A-F][0-9A-F])/i', $urlencstr, $matches);
+        if(!empty($matches[1])) {
+            for($i = 0; $i < count($matches[1]); $i++) {
+                $intval = hexdec($matches[1][$i]);
+                if($intval >= 0xF0) { 
+                    //4 bytes
+                    //todo: test length of remaining string
+                    $result[] = 
+                        ($intval & 7) * pow(2,18) + 
+                        (hexdec($matches[1][$i+1]) & 63) * pow(2,12) +
+                        (hexdec($matches[1][$i+2]) & 63) * pow(2,6) +
+                        (hexdec($matches[1][$i+3]) & 63) ;
+                    $i = $i+3;
+                } elseif($intval >= 0xE0) { 
+                    //3 bytes
+                    //todo: test length of remaining string
+                    $result[] = 
+                        ($intval & 15) * pow(2,12) + 
+                        (hexdec($matches[1][$i+1]) & 63) * pow(2,6) +
+                        (hexdec($matches[1][$i+2]) & 63);
+                    $i = $i+2;
+                } elseif($intval >= 0xC0) { 
+                    //2 bytes
+                    //todo: test length of remaining string
+                    $result[] = 
+                        ($intval & 31) * pow(2,6) + 
+                        (hexdec($matches[1][$i+1]) & 63);
+                    $i = $i+1;
+                } elseif($intval < 0x80) { 
+                    //1 byte
+                    $result[] = $intval;
+
+                } else { 
+                    // not the start of a utf-8 char ??
+                    return array();
+                }
+            }
+        }
+        
+
+        return $result;
     }
 
 
