@@ -153,8 +153,15 @@ class EmojiRecognizer
         if(self::isSingleEmojiByURLEncode($text)) {
             return true;
         }
-        $text = htmlentities($text);
-        return self::isSingleEmojiHTML($text);
+        //disabling this as the test following this one is actually working better
+        //if(self::isSingleEmojiHTML(htmlentities($text))) {
+            //return true;
+        //}
+        if(self::isSingleEmojiByURLEncode(html_entity_decode($text))) {
+            return true;
+        }
+
+        return false;
 
     }
 
