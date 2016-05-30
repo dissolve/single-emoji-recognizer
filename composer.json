@@ -1,5 +1,13 @@
 {
     "name": "dissolve/single-emoji-recognizer",
+    "description": "Determine if a string is a 'Single' Emoji",
+    "license": "CC0-1.0",
+    "authors": [
+        {
+            "name": "Ben Roberts",
+            "homepage": "https://ben.thatmustbe.me/"
+        }
+    ],
     "autoload": {
         "files": ["src/emoji.php"]
     }
