@@ -1,0 +1,6 @@
+{
+    "name": "dissolve/single-emoji-recognizer",
+    "autoload": {
+        "files": ["src/emoji.php"]
+    }
+}
